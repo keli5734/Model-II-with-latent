@@ -1,0 +1,130 @@
+%% 
+clear 
+clc 
+
+%% Parameters  
+beta1 = 3e-8;
+phi = 0.33;
+rho = 0.1;
+delta_I = 0.5;
+s = 1;
+beta2 = 20;
+kappa = 3.2e-2; % 3.2e-2
+q1 = 2e-5;
+delta_F = 0.5;
+xi = 0.1;
+p = 210;
+c = 3;
+beta_prime = 2.5e-8;
+g = 0;
+s2 = 0; % 1e-4
+
+% <--------antibody--------->
+m1 = 1e-4; % 1e-4
+m2 = 1e-2; % 1e-2
+m3 = 12000; % 12000
+r = 0.2; % 0.2
+mu_prime = 0.2; % 0.2
+mu = 0.02; % 0.02
+
+%% Adding Parameters
+
+kappa2 = 3.2e-8;
+q2 = 5e-4;  % 5e-4
+s_ast = 3.8e-1; % 3.8e-3
+k1 = 2;
+gamma = 5e-9;
+delta_M = 24 * 1e-3; % 1e-3
+delta_MI = 2; % 24 * 1.2e-3; 
+
+%% Time setting 
+
+start_time = 0;
+end_time = 2;
+number_of_report_time = (end_time - start_time) * 24 + 1;
+report_time = linspace(start_time, end_time, number_of_report_time);
+len = length(report_time);
+
+
+%% variable vectors 
+
+T = zeros(1,len);
+L = zeros(1,len);
+I = zeros(1,len);
+F = zeros(1,len);
+R = zeros(1,len);
+V = zeros(1,len);
+B = zeros(1,len);
+A = zeros(1,len);
+M = zeros(1,len);
+MI = zeros(1,len);
+
+T0 = 7e+7;
+L0 = 0;
+I0 = 0;
+F0 = 0;
+R0 = 0;
+V0 = 1e+4;
+B0 = 0;
+A0 = 0;
+M0 = 1e+5;
+MI0 = 0;
+
+T(1) = T0;
+V(1) = V0;
+M(1) = M0;
+
+init = [T0,L0,I0,F0,R0,V0,B0,A0,M0,MI0]';
+
+%% odeset 
+
+options = odeset('RelTol',1e-3, 'AbsTol', 1e-6);
+
+%% ode15s
+k = 1; % color index
+for V0 = 1e+4 : 3e+4 :1e+5
+    
+init = [T0,L0,I0,F0,R0,V0,B0,A0,M0,MI0]';
+[~,Y] = ode15s(@laten, report_time, init, options, beta1, beta2, phi,rho, delta_I, s, kappa,q1,delta_F,xi,p,c,beta_prime,...
+                                                        m1,m2,m3,r,mu_prime,mu,g,...
+                                                        kappa2,q2,s_ast,k1,gamma,delta_M,delta_MI,...
+                                                        s2);
+%{
+figure(1)
+semilogy(report_time,Y(:,6)) % viral load
+ylabel({'Viral load'})
+xlabel({'Time post infection', '(days)'})
+
+figure(2)
+plot(report_time,Y(:,3))
+hold on 
+plot(report_time,Y(:,2),'k')
+ylabel({'Infected cells & latent cells'})
+xlabel({'Time post infection', '(days)'})
+
+figure(3)
+plot(report_time, Y(:,1),'k')
+hold on 
+plot(report_time, Y(:,5))
+plot(report_time, Y(:,5) + Y(:,1))
+ylabel({'Target cells & Resistant cells'})
+xlabel({'Time post infection', '(days)'})
+
+figure(4)
+plot(report_time, Y(:,4),'k')
+ylabel({'Interferons'})
+xlabel({'Time post infection', '(days)'})
+%}
+                                                        
+                                                        
+cmap = colormap(lines(15));
+text = ['V_{0} = ', num2str(V0)];                                                                                                       
+plot(report_time, Y(:,10),'k','DisplayName', text,'Color',cmap(k,:),'LineWidth',1.5)
+hold on 
+k = k+1;
+end 
+legend show
+legend('Location','Southwest')
+hold off
+ylabel({'Macrophages'})
+xlabel({'Time post infection', '(days)'})
